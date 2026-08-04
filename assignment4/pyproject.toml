@@ -1,0 +1,10 @@
+[project]
+name = "assignment4"
+version = "0.1.0"
+description = "Predicting Titanic survival with pandas and scikit-learn"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas>=2.2",
+    "scikit-learn>=1.5",
+    "matplotlib>=3.9",
+]
