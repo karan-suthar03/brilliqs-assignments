@@ -1,7 +1,6 @@
 """Predicting who survived the Titanic.
 
-A second dataset alongside the penguins, following the same three steps:
-clean it, look for correlations, train a model.
+Three steps: clean the data, look for correlations, train a model.
 
 Close each window to move on to the next step.
 """
@@ -26,9 +25,10 @@ def load_clean():
     # rescue. Name and Ticket are labels, not facts about the passenger.
     df = df.drop(columns=["PassengerId", "Name", "Ticket", "Cabin"])
 
-    # Age is missing for 177. The median keeps the distribution roughly
-    # intact, which the mean would not if a few very old passengers pulled it.
-    df["Age"] = df["Age"].fillna(df["Age"].median())
+    # Age is missing for 177. One median for everyone would put them all on
+    # the same value, so it is taken per class and sex instead - a first class
+    # man was typically 40, a third class woman 22.
+    df["Age"] = df["Age"].fillna(df.groupby(["Pclass", "Sex"])["Age"].transform("median"))
 
     # only two rows, so the most common port is a safe guess
     df["Embarked"] = df["Embarked"].fillna(df["Embarked"].mode()[0])
@@ -50,7 +50,9 @@ def step_1_cleaning(df):
     print(raw.isna().sum()[raw.isna().sum() > 0].to_string())
     print()
     print(f"  dropped Cabin, missing for {raw['Cabin'].isna().sum()} of {len(raw)}")
-    print(f"  filled {raw['Age'].isna().sum()} ages with the median, {df['Age'].median():.0f}")
+    print(f"  filled {raw['Age'].isna().sum()} ages with the median for their class and sex:")
+    print(raw.pivot_table(index="Sex", columns="Pclass", values="Age",
+                          aggfunc="median").round(0).to_string())
     print(f"  filled {raw['Embarked'].isna().sum()} ports with '{raw['Embarked'].mode()[0]}'")
     print(f"  {df.isna().sum().sum()} missing values left")
     print()
@@ -64,7 +66,7 @@ def step_1_cleaning(df):
 
     axes[1].hist([raw["Age"].dropna(), df["Age"]], bins=30,
                  label=["original", "after filling"], color=["tomato", "seagreen"])
-    axes[1].set(xlabel="age", ylabel="passengers", title="filling 177 ages with the median")
+    axes[1].set(xlabel="age", ylabel="passengers", title="filling 177 ages, per class and sex")
     axes[1].legend()
 
     fig.suptitle("Step 1: what was missing, and what filling it did")
@@ -144,7 +146,7 @@ def step_3_model(df):
     plt.show()
 
 
-def main():
+if __name__ == "__main__":
     df = load_clean()
 
     step_1_cleaning(df)
@@ -152,7 +154,3 @@ def main():
     step_3_model(df)
 
     print("done")
-
-
-if __name__ == "__main__":
-    main()
